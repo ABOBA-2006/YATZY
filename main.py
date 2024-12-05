@@ -100,6 +100,43 @@ def count_points(combination):
             return five*5
 
 
+def roll_dice(dice_to_reroll=None, current_dice=None):
+    if dice_to_reroll is None:
+        return [random.randint(1, 6) for _ in range(5)]
+    return [random.randint(1, 6) if i in dice_to_reroll else current_dice[i] for i in range(5)]
+
+
+# Monte Carlo simulation
+def monte_carlo_yatzy(current_dice, categories, rerolls_left, simulations=1000):
+    best_reroll = []
+    best_ev = 0
+
+    # Generate all possible subsets of dice to reroll
+    dice_indices = list(range(len(current_dice)))
+    reroll_options = [[]] + [[i] for i in dice_indices] + \
+                     [[i, j] for i in dice_indices for j in dice_indices if i < j]
+
+    for reroll in reroll_options:
+        total_score = 0
+
+        for _ in range(simulations):
+            # Simulate reroll
+            simulated_dice = roll_dice(reroll, current_dice)
+            # After rerolling, find the best category score
+            category_scores = [score_dice(simulated_dice, category) for category in categories]
+            total_score += max(category_scores)
+
+        # Calculate expected value (EV) for this reroll option
+        ev = total_score / simulations
+
+        # Update best reroll strategy
+        if ev > best_ev:
+            best_ev = ev
+            best_reroll = reroll
+
+    return best_reroll, best_ev
+
+
 class GUI(QWidget):
     def __init__(self):
         super().__init__()
