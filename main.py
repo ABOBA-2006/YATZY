@@ -11,7 +11,7 @@ COMBINATIONS_AMOUNT = 15
 COMBINATIONS_UPPER = [
             "Ones", "Twos", "Threes", "Fours", "Fives", "Sixes"]
 COMBINATIONS_LOWER_1 = [
-            "One Pair", "Two Pairs", "Three of a Kind", "Four of a Kind", "SKIP"]
+            "One Pair", "Two Pairs", "Three of a Kind", "Four of a Kind"]
 COMBINATIONS_LOWER_2 = [
             "Small Straight", "Large Straight", "Full House", "Chance", "Yatzy"]
 DICE_AMOUNT = 5
@@ -22,13 +22,82 @@ HEIGHT = 800
 user_scores = [0] * COMBINATIONS_AMOUNT
 bot_scores = [0] * COMBINATIONS_AMOUNT
 user_scores_blocks = []
+user_score = 0
 bot_scores_blocks = []
+bot_score = 0
 dice_blocks = []
 dices = [1] * DICE_AMOUNT
 round = 0
 rerolls = 2
 is_rolling = False
 is_game_started = False
+is_move_finished = True
+
+
+
+def count_points(combination):
+    match combination:
+        case "Ones":
+            return dices.count(1) * 1
+        case "Twos":
+            return dices.count(2) * 2
+        case "Threes":
+            return dices.count(3) * 3
+        case "Fours":
+            return dices.count(4) * 4
+        case "Fives":
+            return dices.count(5) * 5
+        case "Sixes":
+            return dices.count(6) * 6
+        case "One Pair":
+            pairs = [value for value in range(1, 7) if dices.count(value) >= 2]
+            pair = max(pairs, default=0)
+            return pair*2
+        case "Two Pairs":
+            pairs = [value for value in range(1, 7) if dices.count(value) >= 2]
+            pair = max(pairs, default=0)
+            pairs.remove(pair)
+            pair2 = max(pairs, default=0)
+            if pair == 0 or pair2 == 0:
+                return 0
+            else:
+                return pair*2 + pair2*2
+        case "Three of a Kind":
+            triples = [value for value in range(1, 7) if dices.count(value) >= 3]
+            triple = max(triples, default=0)
+            return triple*3
+        case "Four of a Kind":
+            fourth = [value for value in range(1, 7) if dices.count(value) >= 4]
+            four = max(fourth, default=0)
+            return four*4
+        case "Small Straight":
+            dices_copy = dices.copy()
+            dices_copy.sort()
+            return 15 if dices_copy == [1, 2, 3, 4, 5] else 0
+        case "Large Straight":
+            dices_copy = dices.copy()
+            dices_copy.sort()
+            return 20 if dices_copy == [2, 3, 4, 5, 6] else 0
+        case "Full House":
+            triples = []
+            pairs = []
+            for value in range(1, 7):
+                count = dices.count(value)
+                if count >= 3:
+                    triples.append(value)
+                elif count >= 2:
+                    pairs.append(value)
+            triple = max(triples, default=0)
+            pair = max(pairs, default=0)
+            if triple == 0 or pair == 0:
+                return 0
+            else:
+                return triple*3 + pair*2
+        case "Chance":
+            return sum(dices)
+        case "Yatzy":
+            five = max([value for value in range(1, 7) if dices.count(value) == 5], default=0)
+            return five*5
 
 
 class GUI(QWidget):
@@ -66,6 +135,15 @@ class GUI(QWidget):
             right_column.addWidget(right_label)
             user_scores_blocks.append(left_label)
             bot_scores_blocks.append(right_label)
+
+        self.user_score_text = QLabel("0")
+        self.bot_score_text = QLabel("0")
+        self.user_score_text.setAlignment(Qt.AlignCenter)
+        self.bot_score_text.setAlignment(Qt.AlignCenter)
+        self.user_score_text.setStyleSheet("background-color: darkgreen; font-size: 20px; color: lightgreen;")
+        self.bot_score_text.setStyleSheet("background-color: crimson; font-size: 20px; color: lightpink;")
+        left_column.addWidget(self.user_score_text)
+        right_column.addWidget(self.bot_score_text)
 
     def init_titles(self):
         bot_name = QLabel(self)
@@ -127,8 +205,8 @@ class GUI(QWidget):
                                   border: 2px solid #000;
                               }
                               QPushButton:hover {
-                                  background-color: lightpink;
-                                  color:crimson;
+                                  background-color: darkgreen;
+                                  color: lightgreen;
                               }
                                       """)
         roll.clicked.connect(lambda : self.roll_button_pressed(False, None))
@@ -170,31 +248,47 @@ class GUI(QWidget):
         for i in range(2):
             for text in COMBINATIONS_UPPER:
                 combination = QPushButton(text)
+                combination.clicked.connect(lambda _, btn=combination, txt=text: self.combination_chosen(btn, txt))
+                combination_bot = QPushButton(text)
                 if i == 0:
                     first_row_user.addWidget(combination)
                 else:
-                    first_row_bot.addWidget(combination)
+                    first_row_bot.addWidget(combination_bot)
             for text in COMBINATIONS_LOWER_1:
                 combination = QPushButton(text)
+                combination_bot = QPushButton(text)
+                combination.clicked.connect(lambda _, btn=combination, txt=text: self.combination_chosen(btn, txt))
                 if i == 0:
                     second_row_user.addWidget(combination)
                 else:
-                    second_row_bot.addWidget(combination)
+                    second_row_bot.addWidget(combination_bot)
             for text in COMBINATIONS_LOWER_2:
                 combination = QPushButton(text)
+                combination_bot = QPushButton(text)
+                combination.clicked.connect(lambda _, btn=combination, txt=text: self.combination_chosen(btn, txt))
                 if i == 0:
                     third_row_user.addWidget(combination)
                 else:
-                    third_row_bot.addWidget(combination)
+                    third_row_bot.addWidget(combination_bot)
+
+    def combination_chosen(self, button, text):
+        global is_move_finished, user_score
+        if not is_move_finished:
+            is_move_finished = True
+            score = count_points(text)
+            user_score += score
+            self.user_score_text.setText(str(user_score))
+            user_scores_blocks[round-1].setText(str(score))
+            button.hide()
 
     def roll_button_pressed(self, is_one_dice, dice_num):
-        global is_rolling, round, rerolls, is_game_started
+        global is_rolling, round, rerolls, is_game_started, is_move_finished
         if not is_rolling:
             is_rolling = True
             self.start_time = time.time()
             self.timer = QTimer(self)
             if is_one_dice:
-                if rerolls >= 1 and is_game_started:
+                if rerolls >= 1 and is_game_started and not is_move_finished:
                     rerolls -= 1
                     self.reroll_text.setText("Re-Rolls: " + str(rerolls))
                     self.timer.timeout.connect(lambda : self.update_one_dice(dice_num))
@@ -202,12 +296,16 @@ class GUI(QWidget):
                     is_rolling = False
                     return
             else:
-                is_game_started = True
-                round += 1
-                self.round_number_text.setText("ROUND # " + str(round))
-                rerolls = 2
-                self.reroll_text.setText("Re-Rolls: " + str(rerolls))
-                self.timer.timeout.connect(self.update_dice)
+                if is_move_finished:
+                    is_game_started = True
+                    round += 1
+                    self.round_number_text.setText("ROUND # " + str(round))
+                    rerolls = 2
+                    self.reroll_text.setText("Re-Rolls: " + str(rerolls))
+                    self.timer.timeout.connect(self.update_dice)
+                else:
+                    is_rolling = False
+                    return
             self.timer.start(70)  # Update every 100ms (10 times per second)
         else:
             return
@@ -222,8 +320,9 @@ class GUI(QWidget):
             dice_blocks[i].setIcon(icon)
         if elapsed_time >= DICE_SPINNING_ANIMATION_DURATION:
             self.timer.stop()
-            global is_rolling, dices
+            global is_rolling, dices, is_move_finished
             dices = dice_randoms.copy()
+            is_move_finished = False
             is_rolling = False
 
     def update_one_dice(self, dice_num):
