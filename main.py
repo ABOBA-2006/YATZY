@@ -1,5 +1,3 @@
-from itertools import combinations
-
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QGridLayout
 )
@@ -8,22 +6,22 @@ from PyQt5.QtCore import Qt, QSize, QTimer
 import random
 import time
 
-
 COMBINATIONS_AMOUNT = 15
 COMBINATIONS_UPPER = [
-            "Ones", "Twos", "Threes", "Fours", "Fives", "Sixes"]
+    "Ones", "Twos", "Threes", "Fours", "Fives", "Sixes"]
 COMBINATIONS_LOWER_1 = [
-            "One Pair", "Two Pairs", "Three of a Kind", "Four of a Kind"]
+    "One Pair", "Two Pairs", "Three of a Kind", "Four of a Kind"]
 COMBINATIONS_LOWER_2 = [
-            "Small Straight", "Large Straight", "Full House", "Chance", "Yatzy"]
+    "Small Straight", "Large Straight", "Full House", "Chance", "Yatzy"]
 COMBINATIONS = COMBINATIONS_UPPER + COMBINATIONS_LOWER_1 + COMBINATIONS_LOWER_2
 DICE_AMOUNT = 5
 DICE_SPINNING_ANIMATION_DURATION = 1.5
 WIDTH = 600
 HEIGHT = 800
+MAX_ROUND = 10
 
-user_scores = [0] * COMBINATIONS_AMOUNT
-bot_scores = [0] * COMBINATIONS_AMOUNT
+user_scores = [0] * MAX_ROUND
+bot_scores = [0] * MAX_ROUND
 bot_combinations_blocks = []
 user_scores_blocks = []
 user_score = 0
@@ -37,7 +35,6 @@ is_rolling = False
 is_game_started = False
 is_move_finished = True
 is_user_turn = True
-
 
 
 def count_points(combination, dice_array):
@@ -57,7 +54,7 @@ def count_points(combination, dice_array):
         case "One Pair":
             pairs = [value for value in range(1, 7) if dice_array.count(value) >= 2]
             pair = max(pairs, default=0)
-            return pair*2
+            return pair * 2
         case "Two Pairs":
             pairs = [value for value in range(1, 7) if dice_array.count(value) >= 2]
             pair = max(pairs, default=0)
@@ -66,15 +63,15 @@ def count_points(combination, dice_array):
             if pair == 0 or pair2 == 0:
                 return 0
             else:
-                return pair*2 + pair2*2
+                return pair * 2 + pair2 * 2
         case "Three of a Kind":
             triples = [value for value in range(1, 7) if dice_array.count(value) >= 3]
             triple = max(triples, default=0)
-            return triple*3
+            return triple * 3
         case "Four of a Kind":
             fourth = [value for value in range(1, 7) if dice_array.count(value) >= 4]
             four = max(fourth, default=0)
-            return four*4
+            return four * 4
         case "Small Straight":
             dices_copy = dice_array.copy()
             dices_copy.sort()
@@ -97,7 +94,7 @@ def count_points(combination, dice_array):
             if triple == 0 or pair == 0:
                 return 0
             else:
-                return triple*3 + pair*2
+                return triple * 3 + pair * 2
         case "Chance":
             return sum(dice_array)
         case "Yatzy":
@@ -136,7 +133,7 @@ class GUI(QWidget):
 
         left_column = QVBoxLayout(left_column_widget)
         right_column = QVBoxLayout(right_column_widget)
-        for i in range(COMBINATIONS_AMOUNT):
+        for i in range(MAX_ROUND):
             left_label, right_label = QLabel(), QLabel()
             left_label.setText(str(user_scores[i]))
             right_label.setText(str(bot_scores[i]))
@@ -163,13 +160,13 @@ class GUI(QWidget):
         bot_name.setAlignment(Qt.AlignCenter)
         bot_name.setText("BOT-IVAN")
         bot_name.setStyleSheet("color: crimson; font-size: 30px; font-weight: bold;")
-        bot_name.setGeometry(0,0, WIDTH, HEIGHT // 16)
+        bot_name.setGeometry(0, 0, WIDTH, HEIGHT // 16)
 
         user = QLabel(self)
         user.setAlignment(Qt.AlignCenter)
         user.setText("YOU")
         user.setStyleSheet("color: darkgreen; font-size: 30px; font-weight: bold;")
-        user.setGeometry(0, HEIGHT - (HEIGHT//16), WIDTH, HEIGHT // 16)
+        user.setGeometry(0, HEIGHT - (HEIGHT // 16), WIDTH, HEIGHT // 16)
 
     def init_dice(self):
         dice_widget = QWidget(self)
@@ -184,14 +181,14 @@ class GUI(QWidget):
             dice.setIconSize(QSize(HEIGHT // divider, HEIGHT // divider))
             dice.setFixedSize(HEIGHT // divider, HEIGHT // divider)
             dice.setStyleSheet("""
-                                    QPushButton {
-                                        background-color: transparent;
-                                    }
-                            
-                                    QPushButton:hover {
-                                      background-color: lightgray;
-                                    }
-                                      """)
+                                   QPushButton {
+                                       background-color: white;
+                                   }
+
+                                   QPushButton:hover {
+                                     background-color: lightgray;
+                                   }
+                                     """)
             dice.clicked.connect(lambda checked, i=i: self.roll_button_pressed(True, i))
             dice_row.addWidget(dice)
             dice_blocks.append(dice)
@@ -210,19 +207,19 @@ class GUI(QWidget):
         self.roll.setFixedWidth(int(0.3 * WIDTH))
         self.roll.setFixedHeight(int(0.125 * HEIGHT))
         self.roll.setStyleSheet("""
-                              QPushButton {
-                                  border-radius: 20px;
-                                  background-color: lightgreen;
-                                  font-size: 30px;
-                                  color: darkgreen;
-                                  border: 2px solid #000;
-                              }
-                              QPushButton:hover {
-                                  background-color: darkgreen;
-                                  color: lightgreen;
-                              }
-                                      """)
-        self.roll.clicked.connect(lambda : self.roll_button_pressed(False, None))
+                             QPushButton {
+                                 border-radius: 20px;
+                                 background-color: lightgreen;
+                                 font-size: 30px;
+                                 color: darkgreen;
+                                 border: 2px solid #000;
+                             }
+                             QPushButton:hover {
+                                 background-color: darkgreen;
+                                 color: lightgreen;
+                             }
+                                     """)
+        self.roll.clicked.connect(lambda: self.roll_button_pressed(False, None))
         roll_layout.addWidget(self.roll)
 
         self.round_number_text = QLabel(self)
@@ -294,7 +291,7 @@ class GUI(QWidget):
             score = count_points(text, dices)
             user_score += score
             self.user_score_text.setText(str(user_score))
-            user_scores_blocks[round-1].setText(str(score))
+            user_scores_blocks[round - 1].setText(str(score))
             button.hide()
             self.bots_turn()
 
@@ -308,7 +305,7 @@ class GUI(QWidget):
                 if rerolls >= 1 and is_game_started and not is_move_finished:
                     rerolls -= 1
                     self.reroll_text.setText("Re-Rolls: " + str(rerolls))
-                    self.timer.timeout.connect(lambda : self.update_one_dice(dice_num))
+                    self.timer.timeout.connect(lambda: self.update_one_dice(dice_num))
                 else:
                     is_rolling = False
                     return
@@ -355,14 +352,14 @@ class GUI(QWidget):
 
     def bots_turn(self):
         self.roll.setStyleSheet(("""
-                                      QPushButton {
-                                          border-radius: 20px;
-                                          background-color: lightpink;
-                                          font-size: 30px;
-                                          color: crimson;
-                                          border: 2px solid #000;
-                                      }
-                                              """))
+                                     QPushButton {
+                                         border-radius: 20px;
+                                         background-color: lightpink;
+                                         font-size: 30px;
+                                         color: crimson;
+                                         border: 2px solid #000;
+                                     }
+                                             """))
         self.roll.setEnabled(False)
         self.roll_button_bot(False, None)
 
@@ -401,7 +398,7 @@ class GUI(QWidget):
             dices = dice_randoms.copy()
             reroll_dices, no_reroll_dices = bot_decision(dices)
             if reroll_dices:
-                QTimer.singleShot(500, lambda:   self.roll_button_bot(True, reroll_dices[0]))
+                QTimer.singleShot(500, lambda: self.roll_button_bot(True, dices.index(reroll_dices[0])))
             else:
                 self.calculate_bot_score()
 
@@ -415,7 +412,7 @@ class GUI(QWidget):
             dices[dice_num] = random_dice
             reroll_dices, no_reroll_dices = bot_decision(dices)
             if reroll_dices:
-                QTimer.singleShot(500, lambda:   self.roll_button_bot(True, reroll_dices[0]))
+                QTimer.singleShot(500, lambda: self.roll_button_bot(True, dices.index(reroll_dices[0])))
             else:
                 self.calculate_bot_score()
 
@@ -428,6 +425,7 @@ class GUI(QWidget):
         max_score = max(scores)
         max_index = scores.index(max_score)
         bot_combinations_blocks[max_index].hide()
+        bot_combinations_blocks.pop(max_index)
 
         global bot_score, is_user_turn
         bot_score += max_score
@@ -436,20 +434,37 @@ class GUI(QWidget):
 
         is_user_turn = True
         self.roll.setStyleSheet("""
-                                      QPushButton {
-                                          border-radius: 20px;
-                                          background-color: lightgreen;
-                                          font-size: 30px;
-                                          color: darkgreen;
-                                          border: 2px solid #000;
-                                      }
-                                      QPushButton:hover {
-                                          background-color: darkgreen;
-                                          color: lightgreen;
-                                      }
-                                              """)
-        self.roll.setEnabled(True)
+                                     QPushButton {
+                                         border-radius: 20px;
+                                         background-color: lightgreen;
+                                         font-size: 30px;
+                                         color: darkgreen;
+                                         border: 2px solid #000;
+                                     }
+                                     QPushButton:hover {
+                                         background-color: darkgreen;
+                                         color: lightgreen;
+                                     }
+                                             """)
+        if round != MAX_ROUND:
+            self.roll.setEnabled(True)
+        else:
+            end_screen = QWidget(self)
+            end_screen.setGeometry(0, 0, WIDTH, HEIGHT)
+            end_screen_layout = QVBoxLayout(end_screen)
+            end_screen_layout.setAlignment(Qt.AlignCenter)
 
+            if user_score > bot_score:
+                end_screen.setStyleSheet("background-color: darkgreen;")
+                text = QLabel("YOU WIN <3")
+
+
+            else:
+                end_screen.setStyleSheet("background-color: crimson;")
+                text = QLabel("YOU LOOSE HA HA HA")
+            text.setStyleSheet("font-size: 30px; font-weight: bold;")
+            end_screen_layout.addWidget(text)
+            end_screen.show()
 
 
 if __name__ == '__main__':
